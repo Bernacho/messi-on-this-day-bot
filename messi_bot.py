@@ -11,7 +11,7 @@ WAITING_MINUTES = 4
 
 def check_and_tweet():
     now = datetime.now(UTC).replace(second=0,microsecond=0)
-    end = now() + timedelta(minutes=WAITING_MINUTES)
+    end = now + timedelta(minutes=WAITING_MINUTES)
     today = now.date()
 
     print(f"Checking schedule at {now}")
