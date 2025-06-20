@@ -18,8 +18,8 @@ def check_and_tweet():
     df['goal_datetime'] = pd.to_datetime(df.goal_datetime).apply(lambda x: x.replace(year=today.year)).dt.floor("min")
 
     matching_goals = df[df.goal_datetime==now]
-    for i, g_ in matching_goals.iterrows(g_):
-        text_, gif_file_ = create_tweet(text_, gif_file_)
+    for i, g_ in matching_goals.iterrows():
+        text_, gif_file_ = create_tweet(g_)
         publish_tweet(text_, gif_file_)
 
     pass
