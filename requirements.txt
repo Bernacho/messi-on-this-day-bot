@@ -6,3 +6,4 @@ mplsoccer==1.4.0
 matplotlib==3.10.0
 numpy==2.2.4
 pillow==11.1.0
+statsbombpy==1.16.0
