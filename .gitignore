@@ -1,5 +1,4 @@
 .env
-gif/
 statsbombpy_test.ipynb
 test_tweets.ipynb
 __pycache__/
