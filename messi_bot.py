@@ -6,7 +6,8 @@ from datetime import datetime, UTC, timedelta
 from goal_plot import *
 from goal_tweet import *
 
-PROCESSING_TIME_SEC = 30
+SETUP_TIME_SEC = 25
+PROCESSING_TIME_SEC = 20
 WAITING_MINUTES = 4
 
 def check_and_tweet():
@@ -28,7 +29,7 @@ def check_and_tweet():
         text_, gif_file_ = create_tweet(g_)
         publish_tweet(text_, gif_file_)
         if g_.wait_min<=WAITING_MINUTES:
-            time.sleep((g_.wait_min*60) - ((i+1)*PROCESSING_TIME_SEC))
+            time.sleep((g_.wait_min*60) - SETUP_TIME_SEC - ((i+1)*PROCESSING_TIME_SEC))
 
 if __name__ == "__main__":
     check_and_tweet()
