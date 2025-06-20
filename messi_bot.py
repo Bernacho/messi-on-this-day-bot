@@ -12,6 +12,8 @@ def check_and_tweet():
     now = datetime.now(UTC).replace(second=0,microsecond=0)
     today = now.date()
 
+    print(f"Checking schedule at {now}")
+
     df = pd.read_csv("data/messi_goals_with_goal_datetime.csv")
     df['goal_datetime'] = pd.to_datetime(df.goal_datetime).apply(lambda x: x.replace(year=today.year)).dt.floor("min")
 
