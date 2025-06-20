@@ -1,1 +1,1 @@
-worker: python messi_bot.py
+web: python messi_bot.py
