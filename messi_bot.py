@@ -1,15 +1,18 @@
 import pandas as pd
 import time
 from datetime import datetime, UTC, timedelta
+from flask import Flask
 
 
 from goal_plot import *
 from goal_tweet import *
 
-SETUP_TIME_SEC = 25
 PROCESSING_TIME_SEC = 20
-WAITING_MINUTES = 4
+WAITING_MINUTES = 0
 
+app = Flask(__name__)
+
+@app.route("/check_goals")
 def check_and_tweet():
     now = datetime.now(UTC).replace(second=0,microsecond=0)
     end = now + timedelta(minutes=WAITING_MINUTES)
@@ -25,17 +28,23 @@ def check_and_tweet():
     matching_goals = df[df.goal_datetime_floor.between(now,end,inclusive='both')].sort_values(["goal_datetime"]).reset_index(drop=True)
 
     for i, g_ in matching_goals.iterrows():
-        if i==0:
-            wait_sec = (g_.goal_datetime - now).total_seconds() - SETUP_TIME_SEC
-        else:
-            wait_sec = g_.wait_sec - PROCESSING_TIME_SEC
-
-        time.sleep(max(0,wait_sec))
+        # No waiting
+        # if i==0:
+        #     wait_sec = (g_.goal_datetime - now).total_seconds()
+        # else:
+        #     wait_sec = g_.wait_sec - PROCESSING_TIME_SEC
+        # time.sleep(max(0,wait_sec))
 
         print(f"Tweeting goal: {g_.id}")
         text_, gif_file_ = create_tweet(g_)
         publish_tweet(text_, gif_file_)
 
+    l_=matching_goals.shape[0]
+    if l_>0:
+        return f"{l_} Tweets {now}"
+    else:
+        return f"No goals found {now}"
 
-if __name__ == "__main__":
-    check_and_tweet()
+
+if __name__ == '__main__':
+    app.run()
