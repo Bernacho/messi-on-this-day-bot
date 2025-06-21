@@ -41,9 +41,12 @@ def check_and_tweet():
 
     l_=matching_goals.shape[0]
     if l_>0:
-        return f"{l_} Tweets {now}"
+        m_ = f"{l_} Tweets {now}"
     else:
-        return f"No goals found {now}"
+        m_ = f"No goals found {now}"
+    
+    print(m_)
+    return m_
 
 
 if __name__ == '__main__':
