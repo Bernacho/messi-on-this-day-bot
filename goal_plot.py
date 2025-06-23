@@ -1,17 +1,30 @@
 import pandas as pd
 from datetime import datetime
-from mplsoccer import VerticalPitch,Pitch,Sbopen
+from mplsoccer import VerticalPitch,Pitch,inset_axes
 import numpy as np
 from matplotlib import pyplot as plt
 import os
 from PIL import Image, ImageSequence
 from matplotlib.animation import FuncAnimation
 from matplotlib.animation import PillowWriter
+import matplotlib.font_manager as fm
+import matplotlib as mpl
+from matplotlib.lines import Line2D
 
 KEPT_EVENTS = ['Pass','Ball Receipt','Carry','Shot','Ball Recovery','Interception','Block','Clearence','Dispossessed','Goal Keeper']
 MIN_GOAL_SEQUENCE_LENGHT_SEC = 5
 MAX_GOAL_SEQUENCE_LENGHT_SEC = 15
 LAST_FRAME_DURATION_SEC = 5
+PENULTIMATE_FRAME_DURATION_SEC = 1
+
+
+font_path = "./fonts/Inter_18pt-Regular.ttf"
+inter_font = fm.FontProperties(fname=font_path)
+fm.fontManager.addfont(font_path)
+bold_path = "./fonts/Inter_18pt-Bold.ttf"
+bold_font = fm.FontProperties(fname=bold_path)
+fm.fontManager.addfont(bold_path)
+mpl.rcParams['font.family'] = inter_font.get_name()
 
 def infer_attack_direction(events_df, team_name, period=1):
 
@@ -111,10 +124,9 @@ def shorten_arrow(x1, y1, x2, y2, r=1,type="end"):
         new_y2 = y2 - dy * factor
     return new_x2,new_y2
 
-def format_events(events_,all_events_,receipt_radius=2.5):
+def format_events(events_,attack_direction,receipt_radius=2.5):
     goal_ = events_[events_.outcome_name=="Goal"].iloc[0]
     team_= goal_.team_name
-    attack_direction = infer_attack_direction(all_events_,team_,goal_.period)
 
     # mirror events
     if attack_direction == "right_to_left":
@@ -206,17 +218,28 @@ def events_to_frames(events_,palette_="night_match"):
             annotations_.append(plot_annotation)
             
         if i==(n-1):
-            interval_ = LAST_FRAME_DURATION_SEC
+            interval_ = PENULTIMATE_FRAME_DURATION_SEC if i>0 else LAST_FRAME_DURATION_SEC
         else:
             next_event = events_.iloc[i+1]
             interval_ = get_timedelta(event.timestamp, next_event.timestamp)
             if interval_<=0:
-                continue
+                continue 
         
         frames_duration_.append(interval_)
         frames_.append([lines_,arrows_,scatter_,annotations_])
         lines_,arrows_,scatter_,annotations_ = [],[],[],[]
-        
+    
+    g_ = events_[events_.outcome_name=="Goal"].iloc[0]
+    xg_ = g_.shot_statsbomb_xg
+    xg_annotation =[(60,-2),"" if pd.isna(xg_) else f"Shot expected goals: {xg_:.1%}",palette_['lines'],5]
+    if len(frames_)==1:
+        frames_[0][3].append(xg_annotation)
+    else:
+        last_frame = [[],[],[],[xg_annotation]]
+        frames_.append(last_frame)
+        frames_duration_.append(LAST_FRAME_DURATION_SEC)
+
+
     assert len(frames_)==len(frames_duration_), "Frames and frames duation of different sizes"
     return frames_,frames_duration_
 
@@ -234,7 +257,7 @@ def plot_elements(frame_,pitch_,ax_,receipt_radius=2.5,scale_factor=40):
         scatter_.append(p)
     for a in frame_[3]:
         p = pitch_.annotate(a[1],xy=(a[0][0],a[0][1]),color=a[2],zorder=a[3],ax=ax_,
-                        ha="center",va='center',fontweight="bold",fontsize=16)
+                        ha="center",va='center',fontproperties=bold_font,fontsize=16)
         annotations_.append(p)
 
     return lines_, arrows_, scatter_, annotations_
@@ -254,15 +277,58 @@ def gif_with_durations(durations_):
     gif.close()
     return file_
 
+def goal_view_plot(g_,ax,side='left_to_right',palette_="night_match"):
+    palette_ = paletts[palette_]
+
+    inset_width,inset_height= (50,30)
+    inset_ax = inset_axes(x=30 + (0 if side=='left_to_right' else 60), y=40, width=inset_width, height=inset_height, ax=ax,zorder=3)
+
+    # Set axis limits to match your StatsBomb goal coordinates
+    inset_ax.set_xlim(36.34-0.5, 43.66+0.5)  # Left to right (shooter’s view)
+    inset_ax.set_ylim(0-0.5, 2.44+1)      # Ground to crossbar
+
+    # Make sure the aspect ratio is equal
+    inset_ax.set_aspect('equal')
+    # Draw goalposts and crossbar
+    post_color = palette_['pitch']
+    left_post = Line2D([36.34, 36.34], [0, 2.44], color=post_color, linewidth=4)
+    right_post = Line2D([43.66, 43.66], [0, 2.44], color=post_color, linewidth=4)
+    crossbar = Line2D([36.34, 43.66], [2.44, 2.44], color=post_color, linewidth=4)
+    ground = Line2D([36.34, 43.66], [0, 0], color=post_color, linestyle='--')
+
+    inset_ax.add_line(left_post)
+    inset_ax.add_line(right_post)
+    inset_ax.add_line(crossbar)
+    inset_ax.add_line(ground)
+
+    # Optional: remove axis ticks and labels
+    inset_ax.set_xticks([])
+    inset_ax.set_yticks([])
+    for spine in inset_ax.spines.values():
+        spine.set_visible(False)
+
+    inset_ax.scatter(g_.end_y,g_.end_z,s=250,zorder=3,color=palette_['marker_highlight'],edgecolors=palette_['marker_highlight'])
+
+    #style
+    center_x = inset_ax.get_xlim()[0]+((inset_ax.get_xlim()[1] - inset_ax.get_xlim()[0])/2)
+    inset_ax.annotate("Goal view",xy=(center_x,2.94),ha='center',va='center',color=palette_['pitch'],fontsize=14,fontproperties=bold_font)
+    inset_ax.set_facecolor(palette_['marker_primary'])
+
 def plot_goal(events_,all_events_,palette_="night_match",stripe_=False,vertical_=False):
     receipt_radius = 3
     scale_factor = 35
     alpha=0.4
     text_alpha=0.75
-    events_ = format_events(events_.copy(),all_events_,receipt_radius)
+    goal = events_[events_.outcome_name=="Goal"].iloc[0]
+    team = goal.team_name
+    attack_direction = infer_attack_direction(all_events_,team,goal.period)
+    events_ = format_events(events_.copy(),attack_direction,receipt_radius)
     # return events_
     pitch = get_pitch(palette_,stripe=stripe_,vertical=vertical_)
     fig, ax = pitch.draw(figsize=(12,8))
+
+    if goal.sub_type_name in ['Penalty','Free Kick']:
+        goal_view_plot(goal,ax,attack_direction,palette_)
         
     frames_,frames_duration_ = events_to_frames(events_,palette_)
     

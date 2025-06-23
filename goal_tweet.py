@@ -47,6 +47,9 @@ FREEKICK_SHOUT_TEXT = [
     "Unreal freekick by Messi! What a Goal!"
 ]
 
+HASHTAGS = ["#SoccerAnalytics", "#FootballData", "#xG", "#DataViz", "#ExpectedGoals","#Messi", "#GOAT", "#OnThisDay",
+            "#StatsBomb", "#AnalyticsFC","#StatsFC","#FootballTwitter","#BeautifulGame"]
+
 def get_goal_events(e):
     _goals = e[e.outcome_name=="Goal"]
     _own_goals = e[e.type_name=="Own Goal For"]
@@ -92,8 +95,11 @@ def get_goal_tweet(goal_,match_,all_goals_):
         time = f"{minute}:{str(second).zfill(2)}"
     else:
         time = f"{display_minute}+{added_minute}:{str(added_second).zfill(2)}"
+
+    tweet_text = f"[{date}] {shout} ({time}). {score_text}, {competition}"
+    tweet_text = tweet_text + "\n\n" + " ".join(random.sample(HASHTAGS+(["#LaLiga"] if "La Liga" in competition else []),2))
     
-    return f"[{date}] {shout} ({time}). {score_text}, {competition}"
+    return tweet_text
 
 def create_tweet(g_):
         parser = Sbopen()
