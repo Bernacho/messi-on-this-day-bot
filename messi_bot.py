@@ -10,8 +10,6 @@ from goal_tweet import *
 PROCESSING_TIME_SEC = 20
 WAITING_MINUTES = 0
 
-TEST_COUNT = 0
-
 app = Flask(__name__)
 
 @app.route("/check_goals")
@@ -37,11 +35,10 @@ def check_and_tweet():
         # else:
         #     wait_sec = g_.wait_sec - PROCESSING_TIME_SEC
         # time.sleep(max(0,wait_sec))
-        if TEST_COUNT==0:
-            print(f"Tweeting goal: {g_.id}")
-            text_, gif_file_ = create_tweet(g_)
-            publish_tweet(text_, gif_file_)
-            TEST_COUNT = TEST_COUNT+1
+        
+        print(f"Tweeting goal: {g_.id}")
+        text_, gif_file_ = create_tweet(g_)
+        publish_tweet(text_, gif_file_)
 
     l_=matching_goals.shape[0]
     if l_>0:
