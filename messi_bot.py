@@ -25,9 +25,8 @@ def check_and_tweet():
     df['goal_datetime'] = pd.to_datetime(df.goal_datetime).apply(lambda x: x.replace(year=today.year))
     df['goal_datetime_floor'] = df.goal_datetime.copy().dt.floor("min")
 
-    # matching_goals = df[df.goal_datetime_floor.between(now,end,inclusive='both')].sort_values(["goal_datetime"]).reset_index(drop=True)
-    matching_goals = df[df.goal_datetime_floor.dt.date==today].sort_values(["goal_datetime"]).reset_index(drop=True)
-
+    matching_goals = df[df.goal_datetime_floor.between(now,end,inclusive='both')].sort_values(["goal_datetime"]).reset_index(drop=True)
+    
     for i, g_ in matching_goals.iterrows():
         # No waiting
         # if i==0:
