@@ -49,6 +49,7 @@ def check_and_tweet():
                 print(f"Attempt {attempt} failed: {e}")
                 if attempt == MAX_RETRIES:
                     print("All retry attempts failed.")
+                time.sleep(3)
 
 
     if PUBLISHED_TWEETS>0:
