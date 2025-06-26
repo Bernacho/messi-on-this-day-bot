@@ -10,6 +10,8 @@ from goal_tweet import *
 PROCESSING_TIME_SEC = 20
 WAITING_MINUTES = 0
 
+TEST_COUNT = 0
+
 app = Flask(__name__)
 
 @app.route("/check_goals")
@@ -25,7 +27,8 @@ def check_and_tweet():
     df['goal_datetime'] = pd.to_datetime(df.goal_datetime).apply(lambda x: x.replace(year=today.year))
     df['goal_datetime_floor'] = df.goal_datetime.copy().dt.floor("min")
 
-    matching_goals = df[df.goal_datetime_floor.between(now,end,inclusive='both')].sort_values(["goal_datetime"]).reset_index(drop=True)
+    # matching_goals = df[df.goal_datetime_floor.between(now,end,inclusive='both')].sort_values(["goal_datetime"]).reset_index(drop=True)
+    matching_goals = df[df.goal_datetime_floor.dt.date==today].sort_values(["goal_datetime"]).reset_index(drop=True)
 
     for i, g_ in matching_goals.iterrows():
         # No waiting
@@ -34,10 +37,11 @@ def check_and_tweet():
         # else:
         #     wait_sec = g_.wait_sec - PROCESSING_TIME_SEC
         # time.sleep(max(0,wait_sec))
-
-        print(f"Tweeting goal: {g_.id}")
-        text_, gif_file_ = create_tweet(g_)
-        publish_tweet(text_, gif_file_)
+        if TEST_COUNT==0:
+            print(f"Tweeting goal: {g_.id}")
+            text_, gif_file_ = create_tweet(g_)
+            publish_tweet(text_, gif_file_)
+            TEST_COUNT = TEST_COUNT+1
 
     l_=matching_goals.shape[0]
     if l_>0:
