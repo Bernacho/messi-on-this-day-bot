@@ -15,6 +15,7 @@ Tools and technologies used:
 * Python: Core programming language and backend logic
 * Matplotlib & Seaborn: Data visualization
 * Statsbomb and Twitter APIs
+* Flask
 
 ### Sample GIFs
 1. vs Manchester United in the 2009 Campions League Final
