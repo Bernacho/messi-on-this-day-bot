@@ -54,7 +54,7 @@ def get_timedelta(t1,t2):
 
     return (t2_ - t1_).total_seconds()
 
-def get_goal_sequence(goal,all_events,tactics):
+def get_goal_sequence(goal,all_events,lineup):
     goal_events = all_events[all_events.possession==goal.possession].loc[lambda y: y.type_name.isin(KEPT_EVENTS)].sort_values("index")
     # limit here the sequence length ?
 
@@ -74,7 +74,8 @@ def get_goal_sequence(goal,all_events,tactics):
         elapsed_time = get_timedelta(first_.timestamp,last_.timestamp)
         first_possession = first_.possession
 
-    jersey_numbers = tactics.groupby('player_id').jersey_number.first()
+    jersey_numbers = lineup.groupby('player_id').jersey_number.first().astype(int)
+    
     goal_events['jersey_number'] = goal_events.player_id.map(jersey_numbers)
     goal_events.reset_index(drop=True,inplace=True)
     goal_ = goal_events[goal_events.outcome_name=="Goal"].iloc[0]

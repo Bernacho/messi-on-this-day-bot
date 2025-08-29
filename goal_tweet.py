@@ -105,11 +105,13 @@ def create_tweet(g_):
         parser = Sbopen()
 
         match = sb.matches(competition_id=g_.competition_id, season_id=g_.season_id).loc[lambda x: x.match_id==g_.match_id].iloc[0]
-        events, __,___,tactics = parser.event(g_.match_id)
+        events, __,___,_ = parser.event(g_.match_id)
+        lineups = list(sb.lineups(g_.match_id).values())
+        lineup = pd.concat(lineups,axis=0)
         all_goals = get_goal_events(events)
         goal = all_goals[all_goals.id==g_.id].iloc[0]
         text = get_goal_tweet(goal,match,all_goals)
-        goal_sequence = get_goal_sequence(goal,events,tactics)
+        goal_sequence = get_goal_sequence(goal,events,lineup)
         file = plot_goal(goal_sequence,events,stripe_=False)
 
         return text, file
