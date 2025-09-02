@@ -10,6 +10,7 @@ from matplotlib.animation import PillowWriter
 import matplotlib.font_manager as fm
 import matplotlib as mpl
 from matplotlib.lines import Line2D
+import gc
 
 KEPT_EVENTS = ['Pass','Ball Receipt','Carry','Shot','Ball Recovery','Interception','Block','Clearence','Dispossessed','Goal Keeper']
 MIN_GOAL_SEQUENCE_LENGHT_SEC = 5
@@ -263,7 +264,7 @@ def plot_elements(frame_,pitch_,ax_,receipt_radius=2.5,scale_factor=40):
 
     return lines_, arrows_, scatter_, annotations_
 
-def gif_with_durations(durations_):
+def gif_with_durations_old(durations_):
     gif = Image.open("gif/temp.gif")
     new_frames = []
     for i, frame in enumerate(ImageSequence.Iterator(gif)):
@@ -277,6 +278,29 @@ def gif_with_durations(durations_):
     new_frames[0].save(file_, save_all=True, append_images=new_frames[1:], loop=0)
     gif.close()
     return file_
+
+
+def gif_with_durations(durations_):
+    file_in = "gif/temp.gif"
+    file_out = "gif/goal_animation.gif"
+
+    with Image.open(file_in) as gif:
+        
+        gif.seek(0)
+        first_frame = gif.copy()
+        first_frame.info['duration'] = durations_[0] * 1000
+
+        frames = []
+        for i, frame in enumerate(ImageSequence.Iterator(gif)):
+            if i == 0:
+                continue  # already handled
+            f = frame.copy()
+            f.info['duration'] = durations_[i] * 1000
+            frames.append(f)
+        first_frame.save(file_out, save_all=True, append_images=frames, loop=0)
+
+    gc.collect()  
+
 
 def goal_view_plot(g_,ax,side='left_to_right',palette_="night_match"):
     palette_ = paletts[palette_]
@@ -326,7 +350,13 @@ def plot_goal(events_,all_events_,palette_="night_match",stripe_=False,vertical_
     events_ = format_events(events_.copy(),attack_direction,receipt_radius)
     # return events_
     pitch = get_pitch(palette_,stripe=stripe_,vertical=vertical_)
-    fig, ax = pitch.draw(figsize=(12,8))
+    
+    fig = plt.figure(figsize=(12, 8), dpi=80)
+    ax = fig.add_subplot(1, 1, 1)
+    pitch.draw(ax=ax)
+    fig.tight_layout()
+
+    # fig, ax = pitch.draw(figsize=(8,6),dpi=80)
 
     if goal.sub_type_name in ['Penalty','Free Kick']:
         goal_view_plot(goal,ax,attack_direction,palette_)
@@ -374,8 +404,11 @@ def plot_goal(events_,all_events_,palette_="night_match",stripe_=False,vertical_
     #     os.remove(file_name_)
     writer = PillowWriter(fps=1)
     anim.save(file_name_, writer=writer)
+    plt.close(fig)
+    gc.collect()
 
     new_file_name = gif_with_durations(frames_duration_)
-    plt.close(fig)
+    
+
 
     return new_file_name
