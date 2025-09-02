@@ -394,6 +394,8 @@ def plot_goal(events_,all_events_,palette_="night_match",stripe_=False,vertical_
         for a in annotations[:scatter_limit]:
             a.set_alpha(text_alpha)
         
+        gc.collect()
+
         return lines + arrows + scatter + annotations
    
 
